@@ -1,66 +1,50 @@
-local pets = {"Dragonfly", "Raccoon", "Fennec Fox", "Disco Bee", "Queen Bee"}
+local pets = {"Dragonfly", "Raccoon", "Fennec Fox", "Disco Bee", "Queen Bee", "Night Owl"}
 local selectedPet = pets[1]
-local placeMode = false
 
 local player = game.Players.LocalPlayer
-local mouse = player:GetMouse()
 local rs = game:GetService("ReplicatedStorage")
+local mouse = player:GetMouse()
 
 local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "PetSpawnerUI"
+gui.Name = "DupeSpawnerUI"
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 200, 0, 180)
-frame.Position = UDim2.new(0.7, 0, 0.3, 0)
-frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+frame.Size = UDim2.new(0, 200, 0, 150)
+frame.Position = UDim2.new(0.7, 0, 0.4, 0)
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 frame.Active = true
 frame.Draggable = true
 
-local label = Instance.new("TextLabel", frame)
-label.Size = UDim2.new(1, 0, 0, 30)
-label.Text = "Pet Spawner"
-label.TextColor3 = Color3.new(1, 1, 1)
-label.BackgroundTransparency = 1
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "Dupe Pet Spawner"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.BackgroundTransparency = 1
 
 local petBtn = Instance.new("TextButton", frame)
 petBtn.Size = UDim2.new(1, -20, 0, 30)
-petBtn.Position = UDim2.new(0, 10, 0, 40)
+petBtn.Position = UDim2.new(0, 10, 0, 35)
 petBtn.Text = "Pet: " .. selectedPet
 petBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 petBtn.TextColor3 = Color3.new(1, 1, 1)
 
-local function cyclePet()
+petBtn.MouseButton1Click:Connect(function()
     local i = table.find(pets, selectedPet)
     selectedPet = pets[i % #pets + 1]
     petBtn.Text = "Pet: " .. selectedPet
-end
-
-petBtn.MouseButton1Click:Connect(cyclePet)
+end)
 
 local spawnBtn = Instance.new("TextButton", frame)
 spawnBtn.Size = UDim2.new(1, -20, 0, 35)
-spawnBtn.Position = UDim2.new(0, 10, 0, 80)
-spawnBtn.Text = "Spawn"
+spawnBtn.Position = UDim2.new(0, 10, 0, 75)
+spawnBtn.Text = "Duplicate"
 spawnBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
 spawnBtn.TextColor3 = Color3.new(1, 1, 1)
 
-local placeBtn = Instance.new("TextButton", frame)
-placeBtn.Size = UDim2.new(1, -20, 0, 30)
-placeBtn.Position = UDim2.new(0, 10, 0, 125)
-placeBtn.Text = "Placer: OFF"
-placeBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
-placeBtn.TextColor3 = Color3.new(1, 1, 1)
-
-placeBtn.MouseButton1Click:Connect(function()
-    placeMode = not placeMode
-    placeBtn.Text = "Placer: " .. (placeMode and "ON" or "OFF")
-    placeBtn.BackgroundColor3 = placeMode and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(120, 0, 0)
-end)
-
-local function spawnPet(petName, pos)
+local function duplicatePet(petName)
     local folder = rs:FindFirstChild("Pets")
     if not folder then
-        warn("❌ Pets folder not found in ReplicatedStorage")
+        warn("❌ No 'Pets' folder in ReplicatedStorage.")
         return
     end
 
@@ -73,38 +57,23 @@ local function spawnPet(petName, pos)
     local clone = pet:Clone()
     clone.Parent = player.Character
 
-    -- Auto-set PrimaryPart if missing
     if not clone.PrimaryPart then
         local base = clone:FindFirstChild("HumanoidRootPart") or clone:FindFirstChildWhichIsA("BasePart")
         if base then
             clone.PrimaryPart = base
         else
-            warn("❌ No base part found for pet:", petName)
+            warn("❌ No base part in pet:", petName)
             return
         end
     end
 
-    if pos then
-        clone:SetPrimaryPartCFrame(CFrame.new(pos))
-    else
-        local root = player.Character:FindFirstChild("HumanoidRootPart")
-        if root then
-            clone:SetPrimaryPartCFrame(root.CFrame * CFrame.new(2, 0, 0))
-        end
+    local root = player.Character:FindFirstChild("HumanoidRootPart")
+    if root then
+        clone:SetPrimaryPartCFrame(root.CFrame * CFrame.new(math.random(2, 5), 0, math.random(2, 5)))
+        print("✅ Spawned pet:", petName)
     end
-
-    print("✅ Spawned pet:", petName)
 end
 
 spawnBtn.MouseButton1Click:Connect(function()
-    spawnPet(selectedPet)
-end)
-
-mouse.Button1Down:Connect(function()
-    if placeMode then
-        local target = mouse.Hit
-        if target then
-            spawnPet(selectedPet, target.Position)
-        end
-    end
+    duplicatePet(selectedPet)
 end)
