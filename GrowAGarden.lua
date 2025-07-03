@@ -44,28 +44,6 @@ spawnBtn.Text = "Spawn"
 spawnBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
 spawnBtn.TextColor3 = Color3.new(1, 1, 1)
 
-local function spawnPet(petName, pos)
-    local folder = rs:FindFirstChild("Pets")
-    if not folder then return end
-    local pet = folder:FindFirstChild(petName)
-    if pet then
-        local clone = pet:Clone()
-        clone.Parent = player.Character
-        local part = clone:FindFirstChildWhichIsA("BasePart")
-        if part then
-            if pos then
-                part.CFrame = CFrame.new(pos)
-            else
-                part.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(2, 0, 0)
-            end
-        end
-    end
-end
-
-spawnBtn.MouseButton1Click:Connect(function()
-    spawnPet(selectedPet)
-end)
-
 local placeBtn = Instance.new("TextButton", frame)
 placeBtn.Size = UDim2.new(1, -20, 0, 30)
 placeBtn.Position = UDim2.new(0, 10, 0, 125)
@@ -77,6 +55,49 @@ placeBtn.MouseButton1Click:Connect(function()
     placeMode = not placeMode
     placeBtn.Text = "Placer: " .. (placeMode and "ON" or "OFF")
     placeBtn.BackgroundColor3 = placeMode and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(120, 0, 0)
+end)
+
+local function spawnPet(petName, pos)
+    local folder = rs:FindFirstChild("Pets")
+    if not folder then
+        warn("❌ Pets folder not found in ReplicatedStorage")
+        return
+    end
+
+    local pet = folder:FindFirstChild(petName)
+    if not pet then
+        warn("❌ Pet not found:", petName)
+        return
+    end
+
+    local clone = pet:Clone()
+    clone.Parent = player.Character
+
+    -- Auto-set PrimaryPart if missing
+    if not clone.PrimaryPart then
+        local base = clone:FindFirstChild("HumanoidRootPart") or clone:FindFirstChildWhichIsA("BasePart")
+        if base then
+            clone.PrimaryPart = base
+        else
+            warn("❌ No base part found for pet:", petName)
+            return
+        end
+    end
+
+    if pos then
+        clone:SetPrimaryPartCFrame(CFrame.new(pos))
+    else
+        local root = player.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            clone:SetPrimaryPartCFrame(root.CFrame * CFrame.new(2, 0, 0))
+        end
+    end
+
+    print("✅ Spawned pet:", petName)
+end
+
+spawnBtn.MouseButton1Click:Connect(function()
+    spawnPet(selectedPet)
 end)
 
 mouse.Button1Down:Connect(function()
