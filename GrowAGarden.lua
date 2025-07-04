@@ -1,4 +1,88 @@
 local player = game.Players.LocalPlayer
+
+-- 🌟 Loading Screen Setup
+local loadingGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+loadingGui.Name = "LoadingScreen"
+loadingGui.IgnoreGuiInset = true
+loadingGui.ResetOnSpawn = false
+
+local bg = Instance.new("Frame", loadingGui)
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.new(0, 0, 0)
+
+-- 🎵 Background music
+local music = Instance.new("Sound", bg)
+music.SoundId = "rbxassetid://1843521514"
+music.Looped = true
+music.Volume = 1
+music:Play()
+
+-- 🖼️ Real Raccoon Image
+local raccoonPic = Instance.new("ImageLabel", bg)
+raccoonPic.Size = UDim2.new(0, 140, 0, 140)
+raccoonPic.Position = UDim2.new(0.5, -70, 0.18, 0)
+raccoonPic.BackgroundTransparency = 1
+raccoonPic.Image = "rbxassetid://16017608809" -- Real raccoon image
+
+-- 📝 Loading Text
+local loadingText = Instance.new("TextLabel", bg)
+loadingText.Size = UDim2.new(1, 0, 0.1, 0)
+loadingText.Position = UDim2.new(0, 0, 0.4, 0)
+loadingText.BackgroundTransparency = 1
+loadingText.Text = "🌿 Loading Garden Assets..."
+loadingText.TextColor3 = Color3.new(1, 1, 1)
+loadingText.TextScaled = true
+loadingText.Font = Enum.Font.SourceSansBold
+
+-- 📊 Progress Bar Background
+local barBackground = Instance.new("Frame", bg)
+barBackground.Size = UDim2.new(0.6, 0, 0.04, 0)
+barBackground.Position = UDim2.new(0.2, 0, 0.55, 0)
+barBackground.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+barBackground.BorderSizePixel = 0
+
+-- 📈 Progress Fill
+local progressBar = Instance.new("Frame", barBackground)
+progressBar.Size = UDim2.new(0, 0, 1, 0)
+progressBar.BackgroundColor3 = Color3.fromRGB(90, 200, 120)
+progressBar.BorderSizePixel = 0
+
+-- ⏭️ Skip Button
+local skip = false
+local skipBtn = Instance.new("TextButton", bg)
+skipBtn.Size = UDim2.new(0, 100, 0, 30)
+skipBtn.Position = UDim2.new(0.5, -50, 0.65, 0)
+skipBtn.Text = "⏭️ Skip"
+skipBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+skipBtn.TextColor3 = Color3.new(1,1,1)
+skipBtn.TextScaled = true
+skipBtn.Font = Enum.Font.SourceSansBold
+
+skipBtn.MouseButton1Click:Connect(function()
+	skip = true
+end)
+
+-- ⏳ Countdown or skip
+for i = 1, 45 do
+	if skip then break end
+	progressBar.Size = UDim2.new(i / 45, 0, 1, 0)
+	task.wait(1)
+end
+
+-- 🧼 Fade out loading screen
+for i = 1, 10 do
+	bg.BackgroundTransparency = i / 10
+	loadingText.TextTransparency = i / 10
+	raccoonPic.ImageTransparency = i / 10
+	progressBar.BackgroundTransparency = i / 10
+	barBackground.BackgroundTransparency = i / 10
+	skipBtn.TextTransparency = i / 10
+	task.wait(0.05)
+end
+music:Stop()
+loadingGui:Destroy()
+
+-- 🧸 Pet Spawner GUI
 local pets = {
 	["Dragonfly"] = "rbxassetid://14861886059",
 	["Raccoon"] = "rbxassetid://14861933542",
@@ -7,7 +91,6 @@ local pets = {
 	["Queen Bee"] = "rbxassetid://14861897800",
 }
 
--- GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.Name = "PetSpawner"
 gui.ResetOnSpawn = false
@@ -39,7 +122,7 @@ local cooldownTime = 60
 local dropdownOpen = false
 local petOptions = {}
 
--- Dropdown logic
+-- Dropdown menu
 dropdown.MouseButton1Click:Connect(function()
 	if dropdownOpen then
 		for _, opt in pairs(petOptions) do opt:Destroy() end
@@ -68,7 +151,7 @@ dropdown.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Pet follow code
+-- 🐾 Pet follow code
 local function spawnPet(name)
 	local id = pets[name]
 	local pet = Instance.new("Part", workspace)
@@ -103,7 +186,7 @@ local function spawnPet(name)
 	end)
 end
 
--- Cooldown w/ countdown
+-- 🕒 Cooldown with countdown
 spawnButton.MouseButton1Click:Connect(function()
 	if cooldown then return end
 
