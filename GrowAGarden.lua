@@ -1,76 +1,127 @@
--- Grow A Garden Pet Spawner with GUI + Animation + Cooldown
--- yt acc: @onlyhanzuuuuu
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("SpawnPet")
-local player = Players.LocalPlayer
-
+local player = game.Players.LocalPlayer
 local pets = {
-    "Dragonfly",
-    "Raccoon",
-    "Disco Bee",
-    "Fennec Fox",
-    "Queen Bee",
-    "Red Fox"
+	["Dragonfly"] = "rbxassetid://14861886059",
+	["Raccoon"] = "rbxassetid://14861933542",
+	["Fennec Fox"] = "rbxassetid://14861920556",
+	["Disco Bee"] = "rbxassetid://14861901753",
+	["Queen Bee"] = "rbxassetid://14861897800",
 }
 
-local cooldown = 120
-local canSpawn = true
-
--- GUI Setup
+-- GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.Name = "PetGUI"
+gui.Name = "PetSpawner"
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 220, 0, 100)
-frame.Position = UDim2.new(0.5, -110, 0.8, 0)
-frame.BackgroundTransparency = 1
-frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+frame.Size = UDim2.new(0, 220, 0, 120)
+frame.Position = UDim2.new(0.5, -110, 0.5, -60)
+frame.BackgroundColor3 = Color3.fromRGB(60, 130, 80)
+frame.Active = true
+frame.Draggable = true
 
-local button = Instance.new("TextButton", frame)
-button.Size = UDim2.new(0, 200, 0, 50)
-button.Position = UDim2.new(0.5, -100, 0, 5)
-button.Text = "Spawn Pet"
-button.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
-button.TextColor3 = Color3.new(1, 1, 1)
-button.Font = Enum.Font.SourceSansBold
-button.TextSize = 24
+local dropdown = Instance.new("TextButton", frame)
+dropdown.Size = UDim2.new(1, -20, 0, 30)
+dropdown.Position = UDim2.new(0, 10, 0, 10)
+dropdown.Text = "Select Pet"
+dropdown.TextScaled = true
+dropdown.BackgroundColor3 = Color3.fromRGB(90, 170, 100)
 
-local label = Instance.new("TextLabel", frame)
-label.Size = UDim2.new(0, 200, 0, 30)
-label.Position = UDim2.new(0.5, -100, 0, 60)
-label.BackgroundTransparency = 1
-label.Text = ""
-label.TextColor3 = Color3.new(1, 0, 0)
-label.Font = Enum.Font.SourceSans
-label.TextSize = 18
+local spawnButton = Instance.new("TextButton", frame)
+spawnButton.Size = UDim2.new(1, -20, 0, 30)
+spawnButton.Position = UDim2.new(0, 10, 0, 50)
+spawnButton.Text = "🧸 Spawn Selected Pet"
+spawnButton.TextScaled = true
+spawnButton.BackgroundColor3 = Color3.fromRGB(80, 200, 120)
 
--- Animation: Fade in GUI
-frame.BackgroundTransparency = 1
-button.TextTransparency = 1
-label.TextTransparency = 1
+local selectedPet = nil
+local cooldown = false
+local cooldownTime = 60
+local dropdownOpen = false
+local petOptions = {}
 
-local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-TweenService:Create(frame, tweenInfo, {BackgroundTransparency = 0.2}):Play()
-TweenService:Create(button, tweenInfo, {TextTransparency = 0}):Play()
-TweenService:Create(label, tweenInfo, {TextTransparency = 0}):Play()
+-- Dropdown logic
+dropdown.MouseButton1Click:Connect(function()
+	if dropdownOpen then
+		for _, opt in pairs(petOptions) do opt:Destroy() end
+		petOptions = {}
+		dropdownOpen = false
+	else
+		local y = 90
+		for name in pairs(pets) do
+			local option = Instance.new("TextButton", frame)
+			option.Size = UDim2.new(1, -20, 0, 25)
+			option.Position = UDim2.new(0, 10, 0, y)
+			option.Text = name
+			option.BackgroundColor3 = Color3.fromRGB(110, 180, 110)
+			option.TextScaled = true
+			option.MouseButton1Click:Connect(function()
+				selectedPet = name
+				dropdown.Text = "Selected: " .. name
+				for _, opt in pairs(petOptions) do opt:Destroy() end
+				petOptions = {}
+				dropdownOpen = false
+			end)
+			table.insert(petOptions, option)
+			y = y + 28
+		end
+		dropdownOpen = true
+	end
+end)
 
--- Click to spawn pet
-button.MouseButton1Click:Connect(function()
-    if canSpawn then
-        canSpawn = false
-        local randomPet = pets[math.random(1, #pets)]
-        Remote:FireServer(randomPet)
-        button.Text = "Cooldown"
-        for i = cooldown, 1, -1 do
-            label.Text = "Wait: " .. i .. "s"
-            wait(1)
-        end
-        label.Text = ""
-        button.Text = "Spawn Pet"
-        canSpawn = true
-    end
+-- Pet follow code
+local function spawnPet(name)
+	local id = pets[name]
+	local pet = Instance.new("Part", workspace)
+	pet.Name = name
+	pet.Shape = Enum.PartType.Ball
+	pet.Size = Vector3.new(2, 2, 2)
+	pet.Anchored = false
+	pet.CanCollide = false
+	pet.Color = Color3.fromRGB(255, 255, 150)
+	pet.Material = Enum.Material.Neon
+
+	local mesh = Instance.new("SpecialMesh", pet)
+	mesh.MeshType = Enum.MeshType.FileMesh
+	mesh.MeshId = "rbxassetid://85612143"
+	mesh.TextureId = id
+	mesh.Scale = Vector3.new(2, 2, 2)
+
+	local run = game:GetService("RunService")
+	local followConn
+
+	followConn = run.Heartbeat:Connect(function()
+		if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+			local root = player.Character.HumanoidRootPart
+			local targetPos = root.Position + Vector3.new(2, 0, 2)
+			pet.Position = pet.Position:Lerp(targetPos, 0.15)
+		end
+	end)
+
+	player.CharacterRemoving:Connect(function()
+		if followConn then followConn:Disconnect() end
+		pet:Destroy()
+	end)
+end
+
+-- Cooldown w/ countdown
+spawnButton.MouseButton1Click:Connect(function()
+	if cooldown then return end
+
+	if not selectedPet then
+		spawnButton.Text = "❌ Select a Pet!"
+		task.wait(2)
+		spawnButton.Text = "🧸 Spawn Selected Pet"
+		return
+	end
+
+	cooldown = true
+	spawnPet(selectedPet)
+
+	for i = cooldownTime, 1, -1 do
+		spawnButton.Text = "⏳ " .. i .. " SECONDS"
+		task.wait(1)
+	end
+
+	spawnButton.Text = "🧸 Spawn Selected Pet"
+	cooldown = false
 end)
